@@ -1,0 +1,12 @@
+277678
+
+
+
+Notes:
+
+Noticed that:
+
+Number of left moves n required to make it back to 1 from Xnis:
+  Xn = Xn-1 + 8(n-1) + 1     where  n > 0 and X0 = 1      
+
+Nvm, just generate the list lazily, then doall

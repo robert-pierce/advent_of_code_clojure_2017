@@ -8,67 +8,161 @@
 
 
 (defn move-down
-  [current-point spiral-numbers numbers-left]
+  [current-point numbers-left move-data]
   (let [current-x (:x current-point)
         current-y (:y current-point)
         moved-down {:x current-x :y (dec current-y)}
-        right-moved-down {:x (inc (:x moved-down)) :y (:y moved-down)}
-        new-spiral-numbers (assoc spiral-numbers (hash moved-down) moved-down)]
+        moves-to-make (:moves-to-make move-data)
+        moves-left (dec (:moves-left move-data))]
     (if (= numbers-left 1)
       moved-down
-      (if (get spiral-numbers (hash right-moved-down))
-        (move-down moved-down new-spiral-numbers (dec numbers-left))
-        (move-right moved-down new-spiral-numbers (dec numbers-left))))))
+      (if (= moves-left 0)
+        (move-right moved-down (dec numbers-left)
+                    {:moves-to-make (inc moves-to-make)
+                     :moves-left (inc moves-to-make)})
+        (move-down moved-down (dec numbers-left)
+                   {:moves-to-make moves-to-make
+                    :moves-left  moves-left})))))
 
 (defn move-left
-  [current-point spiral-numbers numbers-left]
+  [current-point numbers-left move-data]
   (let [current-x (:x current-point)
         current-y (:y current-point)
         moved-left {:x (dec current-x) :y current-y}
-        down-moved-left {:x (:x moved-left) :y (dec (:y moved-left))}
-        new-spiral-numbers (assoc spiral-numbers (hash moved-left) moved-left)]
+        moves-to-make (:moves-to-make move-data)
+        moves-left (dec (:moves-left move-data))]
     (if (= numbers-left 1)
       moved-left
-      (if (get spiral-numbers (hash down-moved-left))
-        (move-left moved-left new-spiral-numbers (dec numbers-left))
-        (move-down moved-left new-spiral-numbers (dec numbers-left))))))
+      (if (= moves-left 0)
+        (move-down moved-left (dec numbers-left)
+                   {:moves-to-make moves-to-make
+                    :moves-left moves-to-make})
+        (move-left moved-left (dec numbers-left) 
+                   {:moves-to-make moves-to-make
+                    :moves-left  moves-left})))))
 
 (defn move-up
-  [current-point spiral-numbers numbers-left]
+  [current-point numbers-left move-data]
   (let [current-x (:x current-point)
         current-y (:y current-point)
         moved-up {:x current-x :y (inc current-y)}
-        left-moved-up {:x (dec (:x moved-up)) :y (:y moved-up)}
-        new-spiral-numbers (assoc spiral-numbers (hash moved-up) moved-up)]
+        moves-to-make (:moves-to-make move-data)
+        moves-left (dec (:moves-left move-data))]
     (if (= numbers-left 1)
       moved-up
-      (if (get spiral-numbers (hash left-moved-up))
-        (move-up moved-up new-spiral-numbers (dec numbers-left))
-        (move-left moved-up new-spiral-numbers (dec numbers-left))))))
+      (if (= moves-left 0)
+        (move-left moved-up (dec numbers-left)
+                   {:moves-to-make (inc moves-to-make)
+                    :moves-left (inc moves-to-make)})
+        (move-up moved-up (dec numbers-left) 
+                 {:moves-to-make moves-to-make
+                  :moves-left  moves-left})))))
 
 (defn move-right
-  [current-point spiral-numbers numbers-left]
+  [current-point numbers-left move-data]
   (let [current-x (:x current-point)
         current-y (:y current-point)
         moved-right {:x (inc current-x) :y current-y}
-        above-moved-right {:x (:x moved-right) :y (inc (:y moved-right))}
-        new-spiral-numbers (assoc spiral-numbers (hash moved-right) moved-right)]
+        moves-to-make (:moves-to-make move-data)
+        moves-left (dec (:moves-left move-data))]
     (if (= numbers-left 1)
       moved-right
-      (if (get spiral-numbers (hash above-moved-right))
-        (move-right moved-right new-spiral-numbers (dec numbers-left))
-        (move-up moved-right new-spiral-numbers (dec numbers-left))))))
+      (if  (= moves-left 0)
+        (move-up moved-right (dec numbers-left) 
+                 {:moves-to-make moves-to-make 
+                  :moves-left moves-to-make})
+        (move-right moved-right (dec numbers-left) 
+                    {:moves-to-make moves-to-make 
+                     :moves-left  moves-left})))))
+
+(defn move-down-2
+  [move-data]
+  (let [current-point (:current-point move-data)
+        current-x (:x current-point)
+        current-y (:y current-point)
+        moved-down {:x current-x :y (dec current-y)}
+        moves-to-make (:moves-to-make move-data)
+        moves-left (dec (:moves-left move-data))]
+    (if (= moves-left 0)
+      {:current-pont moved-down :moves-to-make (inc moves-to-make)
+       :moves-left (inc moves-to-make) :direction "right"}
+      {:current-point moved-down :moves-to-make moves-to-make :moves-left moves-left :direction "down"})))
+
+
+(defn move-left-2
+  [move-data]
+  (let [current-point (:current-point move-data)
+        current-x (:x current-point)
+        current-y (:y current-point)
+        moved-left {:x (dec current-x) :y current-y}
+        moves-to-make (:moves-to-make move-data)
+        moves-left (dec (:moves-left move-data))]
+    (if (= moves-left 0)
+      {:current-point moved-left :moves-to-make moves-to-make :moves-left moves-to-make :direction "down"}
+      {:current-point moved-left :moves-to-make moves-to-make :moves-left moves-left :direction "left"})))
+
+(defn move-up-2
+  [move-data]
+  (let [current-point (:current-point move-data)
+        current-x (:x current-point)
+        current-y (:y current-point)
+        moved-up {:x current-x :y (inc current-y)}
+        moves-to-make (:moves-to-make move-data)
+        moves-left (dec (:moves-left move-data))]
+    (if (= moves-left 0)
+      {:current-point moved-up :moves-to-make (inc moves-to-make) 
+       :moves-left (inc moves-to-make) :direction "left"}
+      {:current-point moved-up :moves-to-make moves-to-make :moves-left moves-left :direction "up"})))
+
+
+(defn move-right-2
+  [move-data]
+  (let [current-point (:current-point move-data)
+        current-x (:x current-point)
+        current-y (:y current-point)
+        moved-right {:x (inc current-x) :y current-y}
+        moves-to-make (:moves-to-make move-data)
+        moves-left (dec (:moves-left move-data))]
+    (if  (= moves-left 0)
+      {:current-point moved-right :moves-to-make moves-to-make :moves-left moves-to-make :direction "up"}
+      {:current-point moved-right :moves-to-make moves-to-make :moves-left moves-left :direction "right"})))
+
+
+(def move-data (atom {:current-point {:x 0 :y 0} :moves-to-make 1 :moves-left 1 :direction "right"}))
 
 (defn get-spiral-number-coordinate
   ([stopping-number]  
    (let [new-point {:x 0 :y 0}
-         spiral-coordinate 
-         (if (= stopping-number 1)
-           new-point (move-right new-point (hash-map (hash new-point) new-point) 
-                                 (dec stopping-number)))]
+         move-data {:current-point {:x 0 :y 0} :moves-to-make 1 :moves-left 1 :direction "right"}]
      (if (= stopping-number 1)
        new-point
-       (move-right new-point (hash-map (hash new-point) new-point) (dec stopping-number))))))
+       (move-right new-point (dec stopping-number) move-data)))))
+
+(defn get-spiral-number-coordinate-loop
+  [number]
+  (loop [x number]
+    (when (> x 0)
+      (let [direction (:direction @move-data)]
+        (if (= direction "right")
+          (swap! move-data merge (move-right-2 @move-data)))
+        (if (= direction "up")
+          (swap! move-data merge (move-up-2 @move-data)))
+        (if (= direction "left")
+          (swap! move-data merge (move-left-2 @move-data)))
+        (if (= direction "down")
+          (swap! move-data merge (move-down-2 @move-data)))))
+    (print x)
+    (recur (dec x))))
+
+
+(defn get-spiral-number-coordinate-2
+  [number]
+  (swap! move-data merge 
+         {:current-point {:x 0 :y 0} :moves-to-make 1 :moves-left 1 :direction "right"})
+  (get-spiral-number-coordinate-loop number)
+  @move-data)
+
+
 
 (defn day-3-part-1
   [input]
