@@ -85,31 +85,32 @@
           (swap! move-data merge (move-down @move-data))))
       (recur (dec x)))))
 
+(defn check-neighbors
+  [point]
+  (if-let [sum-entry (get @spiral-sums (hash point))]
+    (:value sum-entry)))
+
 (defn get-existing-neighbors
   [current-point]
   (let [x-coordinate (:x current-point)
         y-coordinate (:y current-point)
-        point-west {:x (dec x-coordinate) :y y-coodinate}
+        point-west {:x (dec x-coordinate) :y y-coordinate}
         point-north-west {:x (dec x-coordinate) :y (inc y-coordinate)}
         point-north {:x x-coordinate :y (inc y-coordinate)}
         point-north-east {:x (inc x-coordinate) :y (inc y-coordinate)}
-        existing-neighbors []])
-  (if-let [point (get @spiral-sums (hash point-west))]
-    (conj existing-neighbors (:value point)))
-  (if-let [point (get @spiral-sums (hash point-north-west))]
-    (conj existing-neighbors (:value point)))
-  (if-let [point (get @spiral-sums (hash point-north))]
-    (conj existing-neighbors (:value point)))
-  (if-let [point (get @spiral-sums (hash point-north-east))]
-    (conj existing-neighbors (:value point)))
-  existing-neighbors)
+        point-east {:x (inc x-coordinate) :y y-coordinate}
+        point-south-east {:x (inc x-coordinate) :y (dec y-coordinate)}
+        point-south {:x x-coordinate :y (dec y-coordinate)}
+        point-south-west {:x (dec x-coordinate) :y (dec y-coordinate)}
+        possible-neighbors [point-west point-north-west point-north point-north-east 
+                            point-east point-south-east point-south point-south-west]]
+    (remove #(nil? %) (map check-neighbors possible-neighbors))))
 
-
-(defn get-next-spiral-sum
+(defn get-next-spiral-sum!
   [move-data]
   (let [current-point (:current-point move-data)
         x-coordinate (:x current-point)
-        y-coordiante (:y current-point)
+        y-coordinate (:y current-point)
         existing-neighbors (get-existing-neighbors current-point)
         sum (reduce + existing-neighbors)]
     (swap! spiral-sums assoc (hash current-point) {:x x-coordinate :y y-coordinate :value sum})
@@ -117,26 +118,23 @@
 
 (defn get-spiral-sum-loop
   [target]
-  (loop [sum 0]
-    (while (< sum target)
-      (let [direction (:direction @move-data)]
-        (if (= direction "right")
-          (swap! move-data merge (move-right @move-data)))
-        (if (= direction "up")
-          (swap! move-data merge (move-up @move-data)))
-        (if (= direction "left")
-          (swap! move-data merge (move-left @move-data)))
-        (if (= direction "down")
-          (swap! move-data merge (move-down @move-data))))
-      (recur (get-next-spiral-sum @move-data))))
-
+  (while (< (get-next-spiral-sum! @move-data) target)
+    (let [direction (:direction @move-data)]
+      (if (= direction "right")
+        (swap! move-data merge (move-right @move-data)))
+      (if (= direction "up")
+        (swap! move-data merge (move-up @move-data)))
+      (if (= direction "left")
+        (swap! move-data merge (move-left @move-data)))
+      (if (= direction "down")
+        (swap! move-data merge (move-down @move-data))))))
 
 (defn get-spiral-sum
   [target]
-  (swap! move-data merge 
-         {current-point {:x 0 :y 0} :moves-to-make 1 :moves-left 1 :direction "right"})
-  (swap! spiral-sums assoc (hash :x 0 :y 0) {:x 0 :y 0 :value 1})
-  (get-spiral-sum-loop target))
+  (reset! move-data {:current-point {:x 1 :y 0} :moves-to-make 1 :moves-left 1 :direction "up"})
+  (reset! spiral-sums {(hash {:x 0 :y 0}) {:x 0 :y 0 :value 1}})
+  (get-spiral-sum-loop target)
+  (:value (get @spiral-sums (hash (get @move-data :current-point)))))
 
 
 (defn get-spiral-number-coordinate
@@ -159,4 +157,4 @@
   (let [input-str (str input)
         input-int (Integer/parseInt input-str)
         distance (calc-distance-from-origin (get-spiral-number-coordinate input-int))]
-    {:status 200 :body (str distance) }))
+    {:status 200 :body (str (get-spiral-sum input-int)) }))
