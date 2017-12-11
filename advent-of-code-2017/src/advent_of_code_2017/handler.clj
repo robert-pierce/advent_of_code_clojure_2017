@@ -2,6 +2,7 @@
   (:require [advent-of-code-2017.day1 :as day1]
             [advent-of-code-2017.day2 :as day2]
             [advent-of-code-2017.day3 :as day3]
+            [advent-of-code-2017.day4 :as day4]
             [clojure.string :as str]
             [compojure.core :refer :all]
             [compojure.route :as route]
@@ -16,7 +17,9 @@
   (POST "/day2/part-1" request (day2/day-2-part-1 (:body request)))
   (POST "/day2/part-2" request (day2/day-2-part-2 (:body request)))
   (GET "/day3/part-1/:input" [input] (day3/day-3-part-1 input))
-  (GET "/day3/part-2/:input" [input] (day3/day-3-part-2 input) )
+  (GET "/day3/part-2/:input" [input] (day3/day-3-part-2 input))
+  (POST "/day4/part-1" request (day4/day-4-part-1 (:body request)))
+  (POST "/day4/part-2" request (day4/day-4-part-2 (:body request)))
   (route/not-found "Not Found"))
 
 (def app
