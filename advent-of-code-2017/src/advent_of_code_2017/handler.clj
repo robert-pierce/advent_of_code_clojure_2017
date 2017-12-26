@@ -28,6 +28,7 @@
   (POST "/day6/part1" request (day6/day-6-part-1 (:body request)))
   (POST "/day6/part2" request (day6/day-6-part-2 (:body request)))
   (POST "/day7/part1" request (day7/day-7-part-1 (:body request)))
+  (POST "/day7/part2" request (day7/day-7-part-2 (:body request)))
   (route/not-found "Not Found"))
 
 (def app
