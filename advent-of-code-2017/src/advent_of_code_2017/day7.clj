@@ -40,6 +40,7 @@
         {active-node-name node-weight :child-weights child-node-weights}))))
 
 (defn extract-leaves
+"ADDED A FLATTEN"
   [weight-map parent]
   (let [node-name  (first (keys weight-map))
         node-weight (val (first weight-map))
@@ -58,42 +59,34 @@
         updated-weights (conj current-weights value)]
     (assoc coll parent updated-weights)))
 
+(defn get-leaves-difference
+  [values]
+  (let [freq (frequencies values)
+        distinct-values (distinct values)
+        different-node (first (->> freq
+                               (group-by val)
+                               (#(get % 1))
+                               (map key)))
+        difference (first (remove #(= % 0) 
+                                  (map #(- % different-node) distinct-values)))]
+    difference))
+
 (defn process-branch
   "NEED TO WORK ON THIS Replacing analyze-leave, processing 
   aggregated leaves from analyze-leaves-2. Need to do "
-  [branch]
-  (let [values (val branch)
-        balanced? (apply = values)]
-    balanced?))
-
-(defn analyze-leaves-2
-  [leaves]
-  (let [aggregated-leaves (reduce  analyze-leaves-reducer {} leaves)]
-    aggregated-leaves))
+  [coll branch]
+  (let [name (key branch)
+        values (val branch)
+        balanced? (apply = values)
+        ]
+    (if balanced? 
+      (assoc coll name (reduce + values))
+      (assoc coll name {:different (get-leaves-difference values)}))))
 
 (defn analyze-leaves
   [leaves]
-  (println "Number of leav entries " (count leaves))
-  (println "First Leaf values " (first leaves))
-  (println "Second leaf value " (second leaves))
-  (try
-    (let [parent (:parent (first leaves))
-          values (map #((comp first vals) %) leaves) 
-          leaves-balanced? (apply = values)]
-      (if leaves-balanced?
-        {:balanced true :parent parent :sum (reduce + values)}
-        (do 
-          (let [freq (frequencies values)
-                distinct-values (distinct values)
-                different (first (->> freq
-                                      (group-by val)
-                                      (#(get % 1))
-                                      (map key)))
-                difference (first (remove #(= % 0) (map #(- % different) distinct-values)))]
-            {:balanced false :parent parent :difference difference}))))
-    (catch Exception e
-      (println "Exception in analyze leaves" e)
-      nil)))
+  (let [aggregated-leaves (reduce analyze-leaves-reducer {} leaves)]
+    (reduce process-branch {} aggregated-leaves)))
 
 
 (defn remove-leaves-reducer
@@ -120,35 +113,22 @@
     (assoc tree parent-key-to-collapse collapsed-node)))
 
 (defn process-move
+"FIGURE OUT AT ANALYZE LEAVES"
   [root analysis-map]
   (let [old-weight-map (:weight-map analysis-map)
         old-tree (:tree analysis-map)
         extracted-leaves  (extract-leaves old-weight-map "root")
         analyzed-leaves (map analyze-leaves extracted-leaves)
-        use-leaves-retry (every? nil? analyzed-leaves)
-        analyzed-leaves-retry (if use-leaves-retry (analyze-leaves extracted-leaves)
-                                  analyzed-leaves)
-        difference (for [entry analyzed-leaves-retry
+        
+        difference (for [entry analyzed-leaves
                          :let [difference (:difference entry)]
                          :when (not (:balanced entry))]
-                     difference)
-        use-difference-retry (and (not (empty? difference)) (every? nil? difference))
-        difference-retry (if use-difference-retry 
-                           (if (not (:balanced analyzed-leaves-retry))
-                             (conj () (:difference analyzed-leaves-retry))
-                             (sequence ()))
-                            difference)]
-    (println "The extracted leaves are " extracted-leaves)
-    (println "The difference is " difference)
-    (println "The difference-retry is " difference-retry)
-    (println "Use leaves retry " use-leaves-retry)
-    (println "the analyzed leaves are "  analyzed-leaves)
-    (println "The analyzed-leaves retry are " analyzed-leaves-retry )
-    (if (not (empty? difference-retry))
-      (assoc analysis-map :difference (first difference-retry))
+                     difference)]
+    (if (not (empty? difference))
+      (assoc analysis-map :difference (first difference))
       (do
-        (let [collapsed-tree (reduce collapse-tree-reducer old-tree analyzed-leaves-retry)
-              children-to-remove (get-children-to-remove old-tree analyzed-leaves-retry)
+        (let [collapsed-tree (reduce collapse-tree-reducer old-tree analyzed-leaves)
+              children-to-remove (get-children-to-remove old-tree analyzed-leaves)
               collapsed-tree-with-leaves-removed (apply dissoc collapsed-tree children-to-remove)
               updated-weight-map (build-weight-map root collapsed-tree-with-leaves-removed)]
           {:tree collapsed-tree-with-leaves-removed :weight-map updated-weight-map :difference nil}
@@ -181,5 +161,5 @@
         parsed-tree (reduce parse-tree-reducer {} split-on-arrows)
         root (find-root parsed-tree)
         weight-map (build-weight-map (key (first root)) parsed-tree)
-        result (process-unbalanced-tree parsed-tree weight-map (key (first root))) ]
-    {:status 200 :body (str "The answer is " result )}))
+         ]
+    {:status 200 :body (str "The answer is " weight-map )}))
